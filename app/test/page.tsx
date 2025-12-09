@@ -1,102 +1,129 @@
+// app/test/page.tsx
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { questions } from '../../utils/questions';
+import { questions } from '@/utils/questions';
 import { calculateTopsis } from '@/utils/topsis';
+import { ChevronRight, ChevronLeft, CheckCircle } from 'lucide-react';
 
 export default function TestPage() {
     const router = useRouter();
     const [answers, setAnswers] = useState<Record<number, number>>({});
-    const [currentPage, setCurrentPage] = useState(0);
-    const questionsPerPage = 5;
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
 
-    const totalPages = Math.ceil(questions.length / questionsPerPage);
-    const currentQuestions = questions.slice(currentPage * questionsPerPage, (currentPage + 1) * questionsPerPage);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
-    const handleSelect = (qId: number, score: number) => {
-        setAnswers(prev => ({ ...prev, [qId]: score }));
+    if (!isMounted) return null; // Mencegah hydration error
+
+    const currentQuestion = questions[currentIndex];
+    const totalQuestions = questions.length;
+    const progress = ((currentIndex + 1) / totalQuestions) * 100;
+
+    // Ambil jawaban untuk soal saat ini (jika sudah pernah dijawab)
+    const selectedScore = answers[currentQuestion.id];
+
+    const handleSelect = (score: number) => {
+        setAnswers(prev => ({ ...prev, [currentQuestion.id]: score }));
     };
 
     const handleNext = () => {
-        if (currentPage < totalPages - 1) {
-            setCurrentPage(prev => prev + 1);
-            window.scrollTo(0, 0);
+        // Validasi Ganda: Cek apakah jawaban untuk soal ini sudah ada
+        if (answers[currentQuestion.id] === undefined) {
+            alert("Isi dulu jawabannya dong, jangan dikosongin!");
+            return;
+        }
+
+        if (currentIndex < totalQuestions - 1) {
+            setCurrentIndex(prev => prev + 1);
+            window.scrollTo(0, 0); // Scroll ke atas tiap ganti soal
         } else {
             finishTest();
         }
     };
 
-    const finishTest = () => {
-        // Validasi semua terisi
-        if (Object.keys(answers).length < 25) {
-            alert("Mohon isi semua pertanyaan!");
-            return;
+    const handlePrev = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
         }
+    };
 
-        // Hitung TOPSIS
+    const finishTest = () => {
         const result = calculateTopsis(answers);
-
-        // Simpan ke LocalStorage
         localStorage.setItem('lastResult', JSON.stringify({
             date: new Date().toISOString(),
             result: result
         }));
-
-        // Simpan ke History Array
-        const history = JSON.parse(localStorage.getItem('history') || '[]');
-        history.push({ date: new Date().toISOString(), result: result });
-        localStorage.setItem('history', JSON.stringify(history));
-
         router.push('/result');
     };
 
-    const progress = ((Object.keys(answers).length / 25) * 100).toFixed(0);
-
     return (
-        <div className="min-h-screen bg-white p-6 pb-24">
-            <div className="max-w-xl mx-auto">
-                <div className="mb-6">
-                    <div className="flex justify-between text-sm text-gray-500 mb-2">
-                        <span>Progress</span>
-                        <span>{progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-blue-600 h-2.5 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
-                    </div>
-                </div>
+        <div className="max-w-xl mx-auto py-6 md:py-10">
 
-                <h2 className="text-xl font-bold mb-4">Bagian {currentPage + 1} dari {totalPages}</h2>
-
-                <div className="space-y-8">
-                    {currentQuestions.map((q) => (
-                        <div key={q.id} className="border-b pb-6">
-                            <p className="font-medium text-gray-800 mb-3">{q.id}. {q.text}</p>
-                            <div className="space-y-2">
-                                {q.options.map((opt) => (
-                                    <button
-                                        key={opt.score}
-                                        onClick={() => handleSelect(q.id, opt.score)}
-                                        className={`w-full text-left p-3 rounded-lg border text-sm transition-all ${answers[q.id] === opt.score
-                                                ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold'
-                                                : 'border-gray-200 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        {opt.text}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+            {/* Progress Bar */}
+            <div className="mb-6 md:mb-8">
+                <div className="flex justify-between text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
+                    <span>Pertanyaan {currentIndex + 1} / {totalQuestions}</span>
+                    <span>{Math.round(progress)}%</span>
                 </div>
-
-                <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 flex justify-center">
-                    <button
-                        onClick={handleNext}
-                        className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold w-full max-w-md shadow-lg hover:bg-blue-700 transition"
-                    >
-                        {currentPage === totalPages - 1 ? "Lihat Hasil" : "Lanjut"}
-                    </button>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                        className="bg-gradient-to-r from-pink-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${progress}%` }}
+                    ></div>
                 </div>
+            </div>
+
+            {/* Card Soal */}
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-gray-100 min-h-[400px] flex flex-col justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <span className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-xs font-extrabold rounded-full w-fit mb-4 uppercase tracking-wider">
+                    {currentQuestion.category}
+                </span>
+
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 md:mb-8 leading-snug">
+                    {currentQuestion.text}
+                </h2>
+
+                <div className="space-y-3">
+                    {currentQuestion.options.map((opt) => {
+                        const isSelected = selectedScore === opt.score;
+                        return (
+                            <button
+                                key={opt.score}
+                                onClick={() => handleSelect(opt.score)}
+                                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group relative overflow-hidden ${isSelected
+                                        ? 'border-pink-500 bg-pink-50 text-pink-700 font-bold shadow-md scale-[1.02]'
+                                        : 'border-gray-100 bg-white text-gray-600 hover:border-pink-200 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <span className="relative z-10">{opt.text}</span>
+                                {isSelected && <CheckCircle size={20} className="text-pink-500 relative z-10" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8 gap-4">
+                <button
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-500 hover:bg-gray-100 disabled:opacity-0 disabled:cursor-not-allowed transition"
+                >
+                    <ChevronLeft size={20} /> Kembali
+                </button>
+
+                <button
+                    onClick={handleNext}
+                    disabled={selectedScore === undefined} // MATIKAN tombol jika belum jawab
+                    className="flex-1 bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
+                >
+                    {currentIndex === totalQuestions - 1 ? "Lihat Kebenaran" : "Lanjut"}
+                    {currentIndex !== totalQuestions - 1 && <ChevronRight size={20} />}
+                </button>
             </div>
         </div>
     );
