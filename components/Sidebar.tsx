@@ -1,15 +1,13 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, MessageCircle, BarChart, History, Heart, X } from "lucide-react"
+import { Home, ClipboardList, MessageCircle, X, Heart } from "lucide-react"
 import { clsx } from "clsx"
 
 const menuItems = [
   { name: "Beranda", href: "/", icon: Home },
   { name: "Tes Kedekatan", href: "/test", icon: ClipboardList },
   { name: "Tanya AI", href: "/chat", icon: MessageCircle },
-  { name: "Analisis Chat", href: "/analysis", icon: BarChart },
-  { name: "Riwayat", href: "/result", icon: History },
 ]
 
 interface SidebarProps {
