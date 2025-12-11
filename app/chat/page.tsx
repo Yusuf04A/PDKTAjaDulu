@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { Send, Bot, User, Sparkles, Menu } from "lucide-react"
+import { Send, Bot, User, Sparkles, Menu, Loader2 } from "lucide-react" // Tambah Loader2
 import Link from "next/link"
 import Sidebar from "@/components/Sidebar"
 
@@ -8,6 +8,8 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([])
   const [input, setInput] = useState("")
+  // Tambahkan state loading
+  const [isLoading, setIsLoading] = useState(false)
   const [context, setContext] = useState<any>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -35,43 +37,59 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  }, [messages, isLoading]) // Scroll juga saat loading berubah
 
   const handleSend = async () => {
-    if (!input.trim()) return
+    if (!input.trim() || isLoading) return
 
     const userMsg = input
+    setInput("") // Kosongkan input segera
+    
+    // 1. Tampilkan pesan user di UI
     setMessages((prev) => [...prev, { role: "user", text: userMsg }])
-    setInput("")
+    setIsLoading(true) // Set loading true
 
-    setTimeout(() => {
-      let reply = ""
-
+    try {
       if (!context) {
-        reply =
-          "Maaf, aku belum punya data tentang hubunganmu. Saranku akan terlalu umum. Tolong ambil tes dulu ya supaya aku tau konteksnya!"
-      } else {
-        const score = context.score || 0
-
-        if (userMsg.toLowerCase().includes("chat")) {
-          if (score > 0.7)
-            reply =
-              "Chattingan kalian udah oke banget. Coba kurangi intensitas dikit biar dia yang ngejar, atau coba voice note biar makin personal."
-          else
-            reply =
-              "Kalau balasnya lama, jangan di-spam. Coba tarik ulur dulu. Posting story yang menarik dan lihat dia reply gak."
-        } else if (userMsg.toLowerCase().includes("tembak") || userMsg.toLowerCase().includes("jadian")) {
-          if (score > 0.8) reply = "Lampu hijau sih! Tapi pastikan moment-nya pas. Jangan lewat chat kalau bisa."
-          else
-            reply =
-              "Waduh, tahan dulu prajurit! Skor kamu masih di zona hati-hati. Mending bangun chemistry lagi daripada ditolak."
-        } else {
-          reply = "Hmm, menarik. Intinya, tetap jadi diri sendiri ya. Ada lagi yang bikin bingung?"
-        }
+         // Fallback jika tidak ada context (opsional, karena input disabled di bawah)
+         setMessages((prev) => [...prev, { 
+             role: "bot", 
+             text: "Maaf, aku butuh data tes kamu dulu biar sarannya gak ngawur. Ambil tes dulu ya!" 
+         }])
+         setIsLoading(false)
+         return
       }
 
-      setMessages((prev) => [...prev, { role: "bot", text: reply }])
-    }, 1000)
+      // 2. Kirim ke API Route (app/api/chat/route.ts)
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userMsg,
+          context: context, // Kirim data hasil tes ke backend
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghubungi AI")
+      }
+
+      // 3. Tampilkan balasan Gemini
+      setMessages((prev) => [...prev, { role: "bot", text: data.reply }])
+
+    } catch (error) {
+      console.error("Error:", error)
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: "Waduh, koneksiku lagi putus-nyambung nih. Coba tanya lagi ya sebentar lagi!" },
+      ])
+    } finally {
+      setIsLoading(false) // Matikan loading
+    }
   }
 
   return (
@@ -136,7 +154,7 @@ export default function ChatPage() {
                       )}
                     </div>
                     <div
-                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-md ${
+                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-md whitespace-pre-wrap ${
                         m.role === "user"
                           ? "bg-gradient-to-br from-foreground to-foreground/90 text-background rounded-tr-none"
                           : "bg-card text-foreground border border-border rounded-tl-none"
@@ -147,6 +165,20 @@ export default function ChatPage() {
                   </div>
                 </div>
               ))}
+              
+              {/* Indikator Loading */}
+              {isLoading && (
+                 <div className="flex justify-start">
+                  <div className="flex gap-3 max-w-[85%] flex-row">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md bg-gradient-to-br from-primary to-secondary">
+                        <Loader2 size={16} className="text-primary-foreground animate-spin" />
+                    </div>
+                    <div className="p-4 rounded-2xl bg-card text-foreground border border-border rounded-tl-none shadow-md flex items-center">
+                      <span className="text-xs text-muted-foreground animate-pulse">Sedang mengetik...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={bottomRef} />
             </div>
 
@@ -163,15 +195,15 @@ export default function ChatPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={context ? "Tanya saran relationship..." : "Ambil tes dulu yuk..."}
-                  disabled={!context}
+                  disabled={!context || isLoading}
                   className="flex-1 border-2 border-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted disabled:cursor-not-allowed transition-all bg-background text-foreground"
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim()}
-                  className="bg-gradient-to-r from-primary to-secondary text-primary-foreground p-4 rounded-2xl hover:shadow-xl disabled:opacity-50 transition-all shadow-lg disabled:shadow-none"
+                  disabled={!input.trim() || isLoading}
+                  className="bg-gradient-to-r from-primary to-secondary text-primary-foreground p-4 rounded-2xl hover:shadow-xl disabled:opacity-50 transition-all shadow-lg disabled:shadow-none flex items-center justify-center"
                 >
-                  <Send size={20} />
+                  {isLoading ? <Loader2 size={20} className="animate-spin"/> : <Send size={20} />}
                 </button>
               </form>
             </div>
