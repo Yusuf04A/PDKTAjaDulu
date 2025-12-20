@@ -215,7 +215,7 @@ export default function TestPage() {
               <button
                 onClick={handleNext}
                 disabled={selectedScore === undefined || isSubmitting}
-                className="flex-1 bg-rose-950 text-white px-6 py-4 rounded-xl font-bold hover:shadow-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                className="flex-1 bg-rose-600 text-white px-6 py-4 rounded-xl font-bold hover:shadow-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               >
                 {isSubmitting ? "Menghitung..." : currentIndex === totalQuestions - 1 ? "Lihat Hasil" : "Lanjut"}
                 {!isSubmitting && <ChevronRight size={20} />}

@@ -1,92 +1,86 @@
-// utils/topsis.ts
+import { questions } from './questions';
 
 export type TopsisResult = {
-    score: number; // 0.0 to 1.0
+    score: number; // Nilai Preferensi V (0.0 - 1.0)
     recommendation: string;
     description: string;
-    categoryScores: Record<string, number>; // Rata-rata per kategori
+    categoryScores: Record<string, number>;
 };
 
-// 5 Alternatif Output (Berdasarkan Range Nilai Preferensi V)
+// Pemetaan 5 Alternatif Rekomendasi sesuai permintaan
 const getRecommendation = (v: number) => {
-    if (v <= 0.3)
+    if (v >= 0.81)
         return {
-            title: "Sebaiknya Menjauh",
-            desc: "Skor sangat rendah. Indikator menunjukkan ketidaktertarikan yang kuat atau ketidakcocokan fatal.",
-            color: "text-red-600",
+            title: "Gas Pol",
+            desc: "Semua tanda ngedukung. Nyambung, effort dua arah, dan momennya pas. Kalau ini masih kamu raguin, berarti kamu doang yang belum siap.",
         };
-    if (v <= 0.45)
+    if (v >= 0.61)
         return {
-            title: "Tahan Dulu / Hati-hati",
-            desc: "Situasi masih abu-abu atau ada hambatan besar (status hubungan, kesiapan). Jangan terlalu agresif.",
-            color: "text-orange-500",
+            title: "Aman Buat Diperjuangin",
+            desc: "Chemistry ada, sinyalnya jelas, tinggal konsistensi. Bukan yang instan, tapi jelas bukan buang-buang waktu.",
         };
-    if (v <= 0.65)
+    if (v >= 0.41)
         return {
-            title: "Dekati Pelan-Pelan",
-            desc: "Ada potensi, tapi belum stabil. Bangun kenyamanan lebih dalam lagi sebelum melangkah jauh.",
-            color: "text-yellow-500",
+            title: "50:50 Tergantung Keberanian",
+            desc: "Ada potensi, tapi juga ada banyak tanda tanya. Bisa lanjut kalau berani, bisa bubar kalau capek.",
         };
-    if (v <= 0.85)
+    if (v >= 0.21)
         return {
-            title: "Tingkatkan Kedekatan",
-            desc: "Lampu hijau! Respon positif dominan. Mulai tingkatkan intensitas atau ajak jalan lebih sering.",
-            color: "text-blue-500",
+            title: "Jangan Terlalu Baper",
+            desc: "Sinyalnya campur aduk dan effort-nya nggak seimbang. Kalau lanjut, siap-siap lebih capek dari senengnya.",
         };
     return {
-        title: "Siap Menyatakan Perasaan",
-        desc: "Sangat ideal! Kecocokan tinggi, effort dua arah, dan hambatan minim. Saatnya 'Shoot' jika kamu siap.",
-        color: "text-green-600",
+        title: "No, Just No",
+        desc: "Red flag-nya lebih rame dari sinyal positif. Ini bukan slow burn, ini salah jalur.",
     };
 };
 
 export function calculateTopsis(answers: Record<number, number>): TopsisResult {
-    const totalQuestions = 25;
+    // 1. Matriks Keputusan & Normalisasi Terbobot
+    // Karena skala konsisten 1-5, kita gunakan normalisasi Euclidean
+    // Rumus: r_ij = x_ij / sqrt(sum(x_ij^2))
+    // Dalam kasus single user, kita bandingkan dengan nilai Max(5) dan Min(1)
+    
+    let sumSquared = 0;
+    let userSquared = 0;
+    
+    // Kita anggap kriteria adalah 25 pertanyaan
+    questions.forEach((q) => {
+        const score = answers[q.id] || 1;
+        userSquared += Math.pow(score, 2);
+    });
 
-    // 1. Matriks Keputusan (X) - Diambil dari input User
-    // Karena hanya 1 user yang dinilai, kita bandingkan dengan "Benchmark Ideal"
-    // Jarak Ideal Positif (A+) = Semua nilai 5
-    // Jarak Ideal Negatif (A-) = Semua nilai 1
-
-    // Kita beri bobot (Weight) sederhana: Semua kriteria sama penting (bisa di-custom)
-    // W = 1
-
+    // 2. Menentukan Solusi Ideal Positif (A+) dan Negatif (A-)
+    // A+ = Skor 5 (Terbaik), A- = Skor 1 (Terburuk)
     let dPlusSquared = 0;
     let dMinusSquared = 0;
 
-    // Kategori Tracking
     const catSums: Record<string, number> = {};
     const catCounts: Record<string, number> = {};
 
-    // Import questions untuk mapping kategori
-    const { questions } = require('./questions');
+    questions.forEach((q) => {
+        const score = answers[q.id] || 1;
 
-    for (let i = 1; i <= totalQuestions; i++) {
-        const score = answers[i] || 1; // Default 1 jika error
-        const q = questions.find((q: any) => q.id === i);
-
-        // Normalisasi (Sederhana untuk skala Likert tetap 1-5 dalam 1 alternatif)
-        // Dalam TOPSIS single-alternative, kita ukur Euclidean Distance ke Max (5) dan Min (1)
-
-        // Distance to Ideal Best (5)
+        // Jarak ke Ideal Positif (5)
         dPlusSquared += Math.pow(5 - score, 2);
-
-        // Distance to Ideal Worst (1)
+        // Jarak ke Ideal Negatif (1)
         dMinusSquared += Math.pow(score - 1, 2);
 
-        // Hitung rata-rata per kategori untuk info user
-        if (q) {
-            if (!catSums[q.category]) { catSums[q.category] = 0; catCounts[q.category] = 0; }
-            catSums[q.category] += score;
-            catCounts[q.category] += 1;
+        // Rekap untuk skor kategori di UI
+        if (!catSums[q.category]) {
+            catSums[q.category] = 0;
+            catCounts[q.category] = 0;
         }
-    }
+        catSums[q.category] += score;
+        catCounts[q.category] += 1;
+    });
 
+    // 3. Menghitung Jarak Euclidean (D)
     const dPlus = Math.sqrt(dPlusSquared);
     const dMinus = Math.sqrt(dMinusSquared);
 
-    // Hitung Preferensi (V)
-    // V = D- / (D- + D+)
+    // 4. Menghitung Nilai Preferensi (V)
+    // Rumus: V = D- / (D- + D+)
     let preference = 0;
     if (dPlus + dMinus !== 0) {
         preference = dMinus / (dMinus + dPlus);
@@ -94,7 +88,7 @@ export function calculateTopsis(answers: Record<number, number>): TopsisResult {
 
     const rec = getRecommendation(preference);
 
-    // Format Category Scores (1-5 scale avg)
+    // Format skor kategori untuk grafik (Skala 1-5)
     const categoryScores: Record<string, number> = {};
     Object.keys(catSums).forEach(key => {
         categoryScores[key] = parseFloat((catSums[key] / catCounts[key]).toFixed(1));
