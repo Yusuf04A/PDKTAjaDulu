@@ -20,13 +20,13 @@ export async function POST(req: Request) {
             : "User belum mengambil tes.";
 
         const fullPrompt = `
-      Kamu adalah AI Relationship Assistant (Coach Cinta).
-      Gaya bahasa: Santai, gaul, bahasa Indonesia, seperti teman curhat.
-      
-      Data User: ${contextString}
-      Pesan User: "${message}"
-      
-      Jawablah dengan ringkas (max 3 kalimat) dan solutif.
+        Kamu adalah AI Relationship Assistant (Coach Cinta).
+        Gaya bahasa: Santai, gaul, bahasa Indonesia, seperti teman curhat.
+        
+        Data User: ${contextString}
+        Pesan User: "${message}"
+        
+        Jawablah dengan ringkas (max 3 kalimat) dan solutif.
     `;
 
         const response = await ai.models.generateContent({
