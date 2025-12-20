@@ -73,7 +73,7 @@ export default function HomePage() {
             <div className="text-center space-y-6 mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-100 to-pink-100 border border-rose-300 text-sm font-medium text-rose-700 animate-pulse-glow">
                 <Sparkles size={16} />
-                AI-Powered Relationship Advisor
+                Pertama di Indonesia
               </div>
 
               <h1 className="text-5xl md:text-7xl font-black text-balance leading-tight">
@@ -218,7 +218,7 @@ export default function HomePage() {
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-rose-300 text-sm font-medium text-rose-700 mb-4 shadow-sm">
                 <Zap size={16} />
-                Fitur yang belum pernah ada di Indonesia
+                Fitur canggih
               </div>
               <h2 className="text-4xl md:text-5xl font-black text-rose-950 mb-4">Fitur Unggulan</h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto text-pretty">

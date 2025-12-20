@@ -38,19 +38,19 @@ function calculateTopsis(answers: Record<number, number>) {
   let recommendation = "";
   let description = "";
 
-  if (overallScore >= 0.8) {
+  if (overallScore >= 1) {
     recommendation = "Gas Serius! Cocok banget asli";
     description =
       "Semua sinyal hijau nyala. Nyambung, effort ada, dan momennya pas. Kalau ini masih kamu raguin, masalahnya bukan di hubungannya.";
-  } else if (overallScore >= 0.6) {
+  } else if (overallScore >= 0.7) {
     recommendation = "Aman Buat Diperjuangin";
     description =
       "Chemistry ada, sinyalnya jelas, tinggal konsistensi. Bukan yang instan, tapi jelas bukan buang-buang waktu.";
-  } else if (overallScore >= 0.4) {
+  } else if (overallScore >= 0.5) {
     recommendation = "50:50 Tergantung Keberanian";
     description =
       "Ada potensi, tapi juga ada banyak tanda tanya. Bisa lanjut kalau berani, bisa bubar kalau capek.";
-  } else if (overallScore >= 0.4) {
+  } else if (overallScore >= 0.3) {
     recommendation = "Jangan Terlalu Baper";
     description =
       "Sinyalnya campur aduk dan effort-nya nggak seimbang. Kalau lanjut, siap-siap lebih capek dari senengnya.";
