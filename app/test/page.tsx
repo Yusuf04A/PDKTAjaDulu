@@ -1,107 +1,63 @@
-"use client"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { ChevronRight, ChevronLeft, CheckCircle, Sparkles, Heart, User } from "lucide-react"
-import Sidebar from "@/components/Sidebar"
-import { Menu } from "lucide-react"
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle,
+  Sparkles,
+  Heart,
+  User,
+} from "lucide-react";
+import Sidebar from "@/components/Sidebar";
+import { Menu } from "lucide-react";
+import { questions } from "@/utils/questions";
 
-// Sample questions data structure
-const questions = [
-  {
-    id: 1,
-    category: "Komunikasi",
-    text: "Seberapa sering dia memulai percakapan denganmu?",
-    options: [
-      { text: "Sangat jarang atau tidak pernah", score: 1 },
-      { text: "Jarang (1-2 kali seminggu)", score: 2 },
-      { text: "Kadang-kadang (3-4 kali seminggu)", score: 3 },
-      { text: "Sering (hampir setiap hari)", score: 4 },
-      { text: "Sangat sering (beberapa kali sehari)", score: 5 },
-    ],
-  },
-  {
-    id: 2,
-    category: "Responsivitas",
-    text: "Seberapa cepat dia membalas pesanmu?",
-    options: [
-      { text: "Sangat lama (lebih dari 1 hari)", score: 1 },
-      { text: "Lama (beberapa jam)", score: 2 },
-      { text: "Cukup (1-2 jam)", score: 3 },
-      { text: "Cepat (dalam 30 menit)", score: 4 },
-      { text: "Instant (langsung)", score: 5 },
-    ],
-  },
-  {
-    id: 3,
-    category: "Perhatian",
-    text: "Apakah dia mengingat hal-hal kecil tentang dirimu?",
-    options: [
-      { text: "Tidak pernah", score: 1 },
-      { text: "Jarang", score: 2 },
-      { text: "Kadang-kadang", score: 3 },
-      { text: "Sering", score: 4 },
-      { text: "Selalu", score: 5 },
-    ],
-  },
-  {
-    id: 4,
-    category: "Komunikasi",
-    text: "Bagaimana kualitas percakapan kalian?",
-    options: [
-      { text: "Sangat kering (jawaban singkat)", score: 1 },
-      { text: "Biasa saja", score: 2 },
-      { text: "Cukup menarik", score: 3 },
-      { text: "Engaging dan menyenangkan", score: 4 },
-      { text: "Sangat mendalam dan personal", score: 5 },
-    ],
-  },
-  {
-    id: 5,
-    category: "Perhatian",
-    text: "Seberapa sering dia bertanya tentang harimu?",
-    options: [
-      { text: "Tidak pernah", score: 1 },
-      { text: "Jarang", score: 2 },
-      { text: "Kadang-kadang", score: 3 },
-      { text: "Sering", score: 4 },
-      { text: "Hampir selalu", score: 5 },
-    ],
-  },
-]
-
-// Simple TOPSIS calculation
 function calculateTopsis(answers: Record<number, number>) {
-  const categories = ["Komunikasi", "Responsivitas", "Perhatian"]
-  const categoryScores: Record<string, number> = {}
+  const categories = [
+    "Sinyal Ketertarikan",
+    "Kenyamanan & Nyambung",
+    "Effort & Perlakuan",
+    "Situasi & Hambatan",
+    "Perasaan & Kesiapan Kamu",
+  ];
+  const categoryScores: Record<string, number> = {};
 
   categories.forEach((cat) => {
-    const catQuestions = questions.filter((q) => q.category === cat)
-    const catAnswers = catQuestions.map((q) => answers[q.id] || 0)
-    const avg = catAnswers.reduce((a, b) => a + b, 0) / catAnswers.length
-    categoryScores[cat] = Number(avg.toFixed(1))
-  })
+    const catQuestions = questions.filter((q) => q.category === cat);
+    const catAnswers = catQuestions.map((q) => answers[q.id] || 0);
+    const avg = catAnswers.reduce((a, b) => a + b, 0) / catAnswers.length;
+    categoryScores[cat] = Number(avg.toFixed(1));
+  });
 
   const overallScore =
-    Object.values(categoryScores).reduce((a, b) => a + b, 0) / Object.values(categoryScores).length / 5
+    Object.values(categoryScores).reduce((a, b) => a + b, 0) /
+    Object.values(categoryScores).length /
+    5;
 
-  let recommendation = ""
-  let description = ""
+  let recommendation = "";
+  let description = "";
 
   if (overallScore >= 0.8) {
-    recommendation = "Lampu Hijau - Tembak Sekarang!"
+    recommendation = "Gas Serius! Cocok banget asli";
     description =
-      "Semua indikator menunjukkan tanda positif. Dia kemungkinan besar juga tertarik denganmu. Waktu yang tepat untuk move on ke tahap berikutnya!"
+      "Semua sinyal hijau nyala. Nyambung, effort ada, dan momennya pas. Kalau ini masih kamu raguin, masalahnya bukan di hubungannya.";
   } else if (overallScore >= 0.6) {
-    recommendation = "Kuning - Lanjut PDKT"
+    recommendation = "Aman Buat Diperjuangin";
     description =
-      "Ada ketertarikan, tapi belum terlalu kuat. Terus bangun chemistry dan lihat perkembangannya. Jangan terburu-buru."
+      "Chemistry ada, sinyalnya jelas, tinggal konsistensi. Bukan yang instan, tapi jelas bukan buang-buang waktu.";
   } else if (overallScore >= 0.4) {
-    recommendation = "Oranye - Hati-hati"
+    recommendation = "50:50 Tergantung Keberanian";
     description =
-      "Sinyal masih abu-abu. Mungkin dia belum tertarik atau cuma menganggapmu teman. Evaluasi kembali strategi PDKT-mu."
+      "Ada potensi, tapi juga ada banyak tanda tanya. Bisa lanjut kalau berani, bisa bubar kalau capek.";
+  } else if (overallScore >= 0.4) {
+    recommendation = "Jangan Terlalu Baper";
+    description =
+      "Sinyalnya campur aduk dan effort-nya nggak seimbang. Kalau lanjut, siap-siap lebih capek dari senengnya.";
   } else {
-    recommendation = "Merah - Mundur Tactical"
-    description = "Maaf, tapi sepertinya peluangmu kecil. Lebih baik fokus ke orang lain yang lebih appreciate usahamu."
+    recommendation = "Move On, Ini Bukan Cerita Kamu";
+    description =
+      "Lebih banyak tanda bahaya daripada harapan. Kalau masih dipaksa, ini bukan perjuangan, ini pengorbanan WKWKWKWK.";
   }
 
   return {
@@ -109,56 +65,56 @@ function calculateTopsis(answers: Record<number, number>) {
     recommendation,
     description,
     categoryScores,
-  }
+  };
 }
 
 export default function TestPage() {
-  const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [answers, setAnswers] = useState<Record<number, number>>({})
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isMounted, setIsMounted] = useState(false)
-  const [showNameInput, setShowNameInput] = useState(true)
-  const [userName, setUserName] = useState("")
-  const [crushName, setCrushName] = useState("")
+  const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  const [showNameInput, setShowNameInput] = useState(true);
+  const [userName, setUserName] = useState("");
+  const [crushName, setCrushName] = useState("");
 
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
+    setIsMounted(true);
+  }, []);
 
-  if (!isMounted) return null
+  if (!isMounted) return null;
 
-  const currentQuestion = questions[currentIndex]
-  const totalQuestions = questions.length
-  const progress = ((currentIndex + 1) / totalQuestions) * 100
-  const selectedScore = answers[currentQuestion.id]
+  const currentQuestion = questions[currentIndex];
+  const totalQuestions = questions.length;
+  const progress = ((currentIndex + 1) / totalQuestions) * 100;
+  const selectedScore = answers[currentQuestion.id];
 
   const handleSelect = (score: number) => {
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: score }))
-  }
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: score }));
+  };
 
   const handleNext = () => {
     if (answers[currentQuestion.id] === undefined) {
-      alert("Isi dulu jawabannya dong, jangan dikosongin!")
-      return
+      alert("Isi dulu jawabannya dong, jangan dikosongin!");
+      return;
     }
 
     if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex((prev) => prev + 1)
-      window.scrollTo(0, 0)
+      setCurrentIndex((prev) => prev + 1);
+      window.scrollTo(0, 0);
     } else {
-      finishTest()
+      finishTest();
     }
-  }
+  };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1)
+      setCurrentIndex((prev) => prev - 1);
     }
-  }
+  };
 
   const finishTest = () => {
-    const result = calculateTopsis(answers)
+    const result = calculateTopsis(answers);
     localStorage.setItem(
       "lastResult",
       JSON.stringify({
@@ -166,18 +122,18 @@ export default function TestPage() {
         result: result,
         userName,
         crushName,
-      }),
-    )
-    router.push("/result")
-  }
+      })
+    );
+    router.push("/result");
+  };
 
   const handleStartQuiz = () => {
     if (!userName.trim() || !crushName.trim()) {
-      alert("Isi nama kamu dan crush kamu dulu ya!")
-      return
+      alert("Isi nama kamu dan crush kamu dulu ya! tenang aja ini aman kok");
+      return;
     }
-    setShowNameInput(false)
-  }
+    setShowNameInput(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-red-50">
@@ -186,7 +142,10 @@ export default function TestPage() {
       <main className="flex-1 lg:ml-64">
         {/* Mobile Header */}
         <header className="lg:hidden sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-4 py-3 flex items-center justify-between">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-accent transition-colors">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-xl hover:bg-accent transition-colors"
+          >
             <Menu size={24} />
           </button>
           <h1 className="font-bold text-lg">Tes Kedekatan</h1>
@@ -204,7 +163,8 @@ export default function TestPage() {
                   Yuk Mulai Tes Kedekatan!
                 </h1>
                 <p className="text-gray-600 leading-relaxed text-balance">
-                  Isi nama kamu dan nama crush kamu untuk memulai analisis hubungan
+                  Isi nama kamu dan nama crush kamu untuk memulai analisis
+                  hubungan
                 </p>
               </div>
 
@@ -218,7 +178,7 @@ export default function TestPage() {
                     type="text"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
-                    placeholder="Contoh: Budi"
+                    placeholder="Contoh: Rapi"
                     className="w-full px-5 py-4 rounded-xl border-2 border-rose-200 focus:border-rose-500 focus:ring-4 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
                   />
                 </div>
@@ -232,7 +192,7 @@ export default function TestPage() {
                     type="text"
                     value={crushName}
                     onChange={(e) => setCrushName(e.target.value)}
-                    placeholder="Contoh: Ani"
+                    placeholder="Contoh: Go Youn Jung"
                     className="w-full px-5 py-4 rounded-xl border-2 border-pink-200 focus:border-pink-500 focus:ring-4 focus:ring-pink-100 outline-none transition-all text-gray-900 placeholder-gray-400"
                   />
                 </div>
@@ -281,7 +241,7 @@ export default function TestPage() {
 
                 <div className="space-y-3">
                   {currentQuestion.options.map((opt) => {
-                    const isSelected = selectedScore === opt.score
+                    const isSelected = selectedScore === opt.score;
                     return (
                       <button
                         key={opt.score}
@@ -290,15 +250,20 @@ export default function TestPage() {
                           "w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group relative overflow-hidden",
                           isSelected
                             ? "border-rose-500 bg-gradient-to-r from-rose-100 to-pink-100 text-rose-950 font-semibold shadow-lg scale-[1.02]"
-                            : "border-rose-200 bg-white text-gray-600 hover:border-rose-400 hover:bg-rose-50",
+                            : "border-rose-200 bg-white text-gray-600 hover:border-rose-400 hover:bg-rose-50"
                         )}
                       >
-                        <span className="relative z-10 text-sm md:text-base">{opt.text}</span>
+                        <span className="relative z-10 text-sm md:text-base">
+                          {opt.text}
+                        </span>
                         {isSelected && (
-                          <CheckCircle size={20} className="text-rose-500 relative z-10 animate-in zoom-in" />
+                          <CheckCircle
+                            size={20}
+                            className="text-rose-500 relative z-10 animate-in zoom-in"
+                          />
                         )}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -320,16 +285,18 @@ export default function TestPage() {
                 className="flex-1 bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 text-white px-6 py-4 rounded-xl font-bold hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all disabled:shadow-none flex items-center justify-center gap-2 shadow-lg"
               >
                 {currentIndex === totalQuestions - 1 ? "Lihat Hasil" : "Lanjut"}
-                {currentIndex !== totalQuestions - 1 && <ChevronRight size={20} />}
+                {currentIndex !== totalQuestions - 1 && (
+                  <ChevronRight size={20} />
+                )}
               </button>
             </div>
           </div>
         )}
       </main>
     </div>
-  )
+  );
 }
 
 function clsx(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ")
+  return classes.filter(Boolean).join(" ");
 }

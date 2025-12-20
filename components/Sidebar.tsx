@@ -45,7 +45,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div>
               <h1 className="font-bold text-base text-rose-950 tracking-tight">PDKT Aja Dulu</h1>
-              <p className="text-xs text-rose-600">Relationship AI</p>
+              <p className="text-xs text-rose-600">Karena PDKT juga butuh strategi</p>
             </div>
           </div>
           <button onClick={onClose} className="lg:hidden text-rose-400 hover:text-rose-700 transition-colors">

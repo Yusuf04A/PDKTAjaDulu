@@ -29,7 +29,7 @@ export default function ChatPage() {
       setMessages([
         {
           role: "bot",
-          text: "Halo! Aku AI Relationship Assistant. Supaya saranku akurat, yuk ikuti Tes Kedekatan dulu di menu sebelah kiri!",
+          text: "Hey 👋 Sebelum kita bahas hubunganmu lebih jauh, mending isi Tes Kedekatan dulu ya. Biar saranku berdasarkan data, bukan nebak-nebak kaya temenmu itu 😌",
         },
       ])
     }
@@ -116,9 +116,10 @@ export default function ChatPage() {
                 </div>
                 <div>
                   <h2 className="font-bold text-foreground flex items-center gap-2">
-                    AI Relationship Coach
+                    Pak Cipto
                     <Sparkles size={16} className="text-primary" />
                   </h2>
+                  <p className="text-xs text-rose-600 font-medium">Pakar Cinta & Pola Tingkah laku Orang</p>
                   <span className="text-xs text-green-500 flex items-center gap-1 font-medium">
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     Online 24/7
