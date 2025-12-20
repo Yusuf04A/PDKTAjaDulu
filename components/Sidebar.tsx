@@ -1,13 +1,14 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, MessageCircle, X, Heart } from "lucide-react"
+import { Home, ClipboardList, MessageCircle, X, Heart, ImageUp } from "lucide-react"
 import { clsx } from "clsx"
 
 const menuItems = [
   { name: "Beranda", href: "/", icon: Home },
   { name: "Tes Kedekatan", href: "/test", icon: ClipboardList },
   { name: "Tanya AI", href: "/chat", icon: MessageCircle },
+  { name: "Analisis Chat", href: "/photoupload", icon: ImageUp },
 ]
 
 interface SidebarProps {
@@ -86,7 +87,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="p-4 border-t border-rose-100">
           <div className="p-3 rounded-xl bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200">
             <p className="text-xs text-center text-rose-700">© 2025 PDKT Aja Dulu</p>
-            <p className="text-xs text-center text-rose-600 mt-1">Powered by AI & TOPSIS</p>
+            <p className="text-xs text-center text-rose-600 mt-1">Created by Yusup & Rapi</p>
           </div>
         </div>
       </aside>
