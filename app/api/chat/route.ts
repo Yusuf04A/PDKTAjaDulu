@@ -1,74 +1,66 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Gunakan GoogleGenerativeAI, bukan GoogleGenAI
-import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from "next/server";
+import { GoogleGenAI } from "@google/genai"
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from "next/server"
 
-// Inisialisasi Supabase menggunakan variabel lingkungan
+// Inisialisasi Supabase
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+)
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+})
 
 export async function POST(req: Request) {
-    try {
-        const { message, resultId } = await req.json(); // Mengambil resultId dari body request
-        const apiKey = process.env.GEMINI_API_KEY;
+  try {
+    const { message, resultId } = await req.json()
 
-        if (!apiKey) {
-            return NextResponse.json(
-                { error: "API Key Gemini belum diatur di .env.local" },
-                { status: 500 }
-            );
-        }
-
-        // 1. Ambil data hasil tes dari Supabase berdasarkan resultId
-        const { data: testData, error: dbError } = await supabase
-            .from('test_results')
-            .select('*')
-            .eq('id', resultId)
-            .single();
-
-        if (dbError) {
-            console.error("Database Error:", dbError.message);
-        }
-
-        // 2. Inisialisasi GoogleGenerativeAI dengan benar
-        const genAI = new GoogleGenerativeAI(apiKey); 
-        
-        // Gunakan model gemini-1.5-flash
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        // 3. Susun konteks untuk AI berdasarkan data database
-        const contextString = testData
-            ? `Data User: ${testData.user_name}, Nama Crush: ${testData.crush_name}. 
-               Hasil Rekomendasi: ${testData.recommendation}. 
-               Skor Akhir: ${(testData.overall_score * 100).toFixed(0)}%. 
-               Detail Skor Kategori: ${JSON.stringify(testData.category_scores)}.`
-            : "User belum mengambil tes kedekatan.";
-
-        const prompt = `
-            Kamu adalah Pak Cipto, asisten AI gaul dan bijak di aplikasi "PDKT Aja Dulu".
-            Tugasmu: Memberikan saran percintaan berdasarkan data tes user.
-            
-            Konteks Hubungan User: ${contextString}
-            Pertanyaan User: "${message}"
-            
-            Aturan Jawaban:
-            - Gunakan bahasa Indonesia yang santai, akrab (pakai 'kamu', 'aku'), dan agak lucu.
-            - Sebut nama user atau crush-nya agar terasa personal.
-            - Berikan solusi nyata dan singkat (maksimal 3 kalimat).
-        `;
-
-        // 4. Generate konten
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-
-        return NextResponse.json({ reply: responseText });
-
-    } catch (error: any) {
-        console.error("Chat API Error:", error);
-        return NextResponse.json(
-            { error: error.message || "Gagal menghubungi AI" },
-            { status: 500 }
-        );
+    // 1. Ambil data hasil tes dari Supabase agar Pak Cipto tahu konteksnya
+    let testData = null
+    if (resultId) {
+      const { data } = await supabase
+        .from('test_results')
+        .select('*')
+        .eq('id', resultId)
+        .maybeSingle()
+      testData = data
     }
+
+    // 2. Susun data user untuk dimasukkan ke dalam prompt
+    const infoHubungan = testData 
+      ? `User: ${testData.user_name}, Crush: ${testData.crush_name}. Skor: ${(testData.overall_score * 100).toFixed(0)}%. Rekomendasi: ${testData.recommendation}.`
+      : "Data hubungan tidak ditemukan."
+
+    // 3. Gabungkan pesan user dengan instruksi kepribadian Pak Cipto
+    const promptPakCipto = `
+      Kamu adalah Pak Cipto, seorang pakar cinta gaul dan bijak di aplikasi "PDKT Aja Dulu".
+      Tugasmu: Memberikan saran percintaan yang santai tapi ngena.
+      
+      Konteks Hubungan saat ini: ${infoHubungan}
+      Pertanyaan User: "${message}"
+      
+      Aturan Jawaban:
+      - Gunakan bahasa Indonesia santai (pakai 'aku', 'kamu').
+      - Harus terasa seperti pakar cinta yang asik dan agak lucu.
+      - Sebut nama user atau crush-nya jika ada di data agar personal.
+      - Maksimal 3 kalimat saja.
+    `
+
+    // 4. Kirim ke AI menggunakan struktur yang kamu inginkan
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash", // Mengikuti string model yang kamu berikan
+      contents: promptPakCipto,
+    })
+
+    return NextResponse.json({
+      reply: response.text,
+    })
+  } catch (error: any) {
+    console.error("Gemini Error:", error)
+    return NextResponse.json(
+      { error: "Pak Cipto lagi galau, coba lagi nanti ya!" },
+      { status: 500 }
+    )
+  }
 }
