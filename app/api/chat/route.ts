@@ -1,52 +1,71 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Gunakan GoogleGenerativeAI, bukan GoogleGenAI
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from "next/server";
+
+// Inisialisasi Supabase menggunakan variabel lingkungan
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(req: Request) {
     try {
-        const { message, context } = await req.json();
+        const { message, resultId } = await req.json(); // Mengambil resultId dari body request
         const apiKey = process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
             return NextResponse.json(
-                { error: "API Key belum disetting" },
+                { error: "API Key Gemini belum diatur di .env.local" },
                 { status: 500 }
             );
         }
 
-        const ai = new GoogleGenAI({ apiKey });
+        // 1. Ambil data hasil tes dari Supabase berdasarkan resultId
+        const { data: testData, error: dbError } = await supabase
+            .from('test_results')
+            .select('*')
+            .eq('id', resultId)
+            .single();
 
-        const contextString = context
-            ? `Data Tes Hubungan User: Skor ${context.score}, Rekomendasi: "${context.recommendation}".`
-            : "User belum mengambil tes.";
+        if (dbError) {
+            console.error("Database Error:", dbError.message);
+        }
 
-        const fullPrompt = `
-      Kamu adalah AI Relationship Assistant (Coach Cinta).
-      Gaya bahasa: Santai, gaul, bahasa Indonesia, seperti teman curhat.
-      
-      Data User: ${contextString}
-      Pesan User: "${message}"
-      
-      Jawablah dengan ringkas (max 3 kalimat) dan solutif.
-    `;
+        // 2. Inisialisasi GoogleGenerativeAI dengan benar
+        const genAI = new GoogleGenerativeAI(apiKey); 
+        
+        // Gunakan model gemini-1.5-flash
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [
-                {
-                    role: "user",
-                    parts: [{ text: fullPrompt }]
-                }
-            ],
-        });
+        // 3. Susun konteks untuk AI berdasarkan data database
+        const contextString = testData
+            ? `Data User: ${testData.user_name}, Nama Crush: ${testData.crush_name}. 
+               Hasil Rekomendasi: ${testData.recommendation}. 
+               Skor Akhir: ${(testData.overall_score * 100).toFixed(0)}%. 
+               Detail Skor Kategori: ${JSON.stringify(testData.category_scores)}.`
+            : "User belum mengambil tes kedekatan.";
 
-        // PERBAIKAN DISINI:
-        // Hapus tanda kurung (). Jika response.text null, kita ambil manual dari candidates.
-        const replyText = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, aku bingung jawabnya.";
+        const prompt = `
+            Kamu adalah Pak Cipto, asisten AI gaul dan bijak di aplikasi "PDKT Aja Dulu".
+            Tugasmu: Memberikan saran percintaan berdasarkan data tes user.
+            
+            Konteks Hubungan User: ${contextString}
+            Pertanyaan User: "${message}"
+            
+            Aturan Jawaban:
+            - Gunakan bahasa Indonesia yang santai, akrab (pakai 'kamu', 'aku'), dan agak lucu.
+            - Sebut nama user atau crush-nya agar terasa personal.
+            - Berikan solusi nyata dan singkat (maksimal 3 kalimat).
+        `;
 
-        return NextResponse.json({ reply: replyText });
+        // 4. Generate konten
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+
+        return NextResponse.json({ reply: responseText });
 
     } catch (error: any) {
-        console.error("Error Gemini Baru:", error);
+        console.error("Chat API Error:", error);
         return NextResponse.json(
             { error: error.message || "Gagal menghubungi AI" },
             { status: 500 }
