@@ -31,11 +31,23 @@ export async function POST(req: Request) {
             console.error("Database Error:", dbError.message);
         }
 
+<<<<<<< HEAD
         // 2. Inisialisasi GoogleGenerativeAI dengan benar
         const genAI = new GoogleGenerativeAI(apiKey); 
         
         // Gunakan model gemini-1.5-flash
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+=======
+        const fullPrompt = `
+        Kamu adalah AI Relationship Assistant (Coach Cinta).
+        Gaya bahasa: Santai, gaul, bahasa Indonesia, seperti teman curhat.
+        
+        Data User: ${contextString}
+        Pesan User: "${message}"
+        
+        Jawablah dengan ringkas (max 3 kalimat) dan solutif.
+    `;
+>>>>>>> 619e6935bb3cca5d4b5f09369366d81def4e5fc9
 
         // 3. Susun konteks untuk AI berdasarkan data database
         const contextString = testData
